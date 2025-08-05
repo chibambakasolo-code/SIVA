@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <!-- Summary Cards -->
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-success h-100">
+            <div class="card-body">
+                <h5 class="card-title">Total Items</h5>
+                <p class="card-text display-6">{{ summary.total_items }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-warning h-100">
+            <div class="card-body">
+                <h5 class="card-title">Low Stock</h5>
+                <p class="card-text display-6">{{ summary.low_stock }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-info h-100">
+            <div class="card-body">
+                <h5 class="card-title">Today's Sales</h5>
+                <p class="card-text display-6">K{{ "%.2f"|format(summary.daily_sales.total_sales|float) }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card text-white bg-primary h-100">
+            <div class="card-body">
+                <h5 class="card-title">Items Sold Today</h5>
+                <p class="card-text display-6">{{ summary.daily_sales.items_sold }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Search and Quick Sale -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Quick Sale</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="searchItem" class="form-label">Search Item</label>
+                    <input type="text" class="form-control" id="searchItem" placeholder="Start typing...">
+                    <div id="searchResults" class="list-group mt-2" style="display: none;"></div>
+                </div>
+                <div id="saleForm" style="display: none;">
+                    <div class="mb-3">
+                        <label class="form-label">Item: <span id="saleItemName"></span></label>
+                        <input type="hidden" id="saleItemId">
+                    </div>
+                    <div class="mb-3">
+                        <label for="saleQuantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="saleQuantity" value="1" min="1">
+                    </div>
+                    <div class="mb-3">
+                        <label for="salePrice" class="form-label">Total Price (K)</label>
+                        <input type="number" step="0.01" class="form-control" id="salePrice">
+                    </div>
+                    <button id="recordSale" class="btn btn-primary">Record Sale</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Sales -->
+    <div class="col-md-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Sales</h5>
+                <button class="btn btn-sm btn-outline-primary" id="refreshSales">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Item</th>
+                                <th>Qty</th>
+                                <th>Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in sales %}
+                            <tr>
+                                <td>{{ sale.sale_date }}</td>
+                                <td>{{ sale.item_name }}</td>
+                                <td>{{ sale.quantity }}</td>
+                                <td>K{{ "%.2f"|format(sale.price|float) }}</td>
+                                <td>K{{ "%.2f"|format(sale.price * sale.quantity|float) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Inventory Alerts -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Inventory Alerts</h5>
+            </div>
+            <div class="card-body">
+                <h6 class="text-danger">Low Stock Items</h6>
+                {% if alerts.low_stock %}
+                <ul class="list-group mb-3">
+                    {% for item in alerts.low_stock %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ item.name }}
+                        <span class="badge bg-danger rounded-pill">{{ item.quantity }} left (threshold: {{ item.threshold }})</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="alert alert-success">No low stock items!</div>
+                {% endif %}
+
+                <h6 class="text-warning">Poor Performers (No sales in 30 days)</h6>
+                {% if alerts.poor_performers %}
+                <ul class="list-group">
+                    {% for item in alerts.poor_performers %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{ item.name }}
+                        <span class="badge bg-warning rounded-pill">No recent sales</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="alert alert-success">All items have recent sales!</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Charts -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Quick Charts</h5>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-primary chart-btn" data-type="sales_trend">
+                        <i class="bi bi-graph-up"></i> Sales
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary chart-btn" data-type="inventory">
+                        <i class="bi bi-box-seam"></i> Inventory
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary chart-btn" data-type="performance">
+                        <i class="bi bi-trophy"></i> Performance
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="chartContainer" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Full Inventory -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Inventory</h5>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
+                    <i class="bi bi-plus-circle"></i> Add Item
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Threshold</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in inventory %}
+                            <tr>
+                                <td>{{ item.name }}</td>
+                                <td>{{ item.category }}</td>
+                                <td>K{{ "%.2f"|format(item.price|float) }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.threshold }}</td>
+                                <td>
+                                    {% if item.quantity < item.threshold %}
+                                    <span class="badge bg-danger">Low Stock</span>
+                                    {% else %}
+                                    <span class="badge bg-success">In Stock</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary edit-item" data-id="{{ item.id }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-item" data-id="{{ item.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Item Modal -->
+<div class="modal fade" id="addItemModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addItemForm">
+                    <div class="mb-3">
+                        <label for="itemName" class="form-label">Item Name</label>
+                        <input type="text" class="form-control" id="itemName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="itemCategory" class="form-label">Category</label>
+                        <input type="text" class="form-control" id="itemCategory" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="itemPrice" class="form-label">Price (K)</label>
+                        <input type="number" step="0.01" class="form-control" id="itemPrice" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="itemQuantity" class="form-label">Initial Quantity</label>
+                        <input type="number" class="form-control" id="itemQuantity" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="itemThreshold" class="form-label">Low Stock Threshold</label>
+                        <input type="number" class="form-control" id="itemThreshold" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveItem">Save Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Item Modal -->
+<div class="modal fade" id="editItemModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editItemForm">
+                    <input type="hidden" id="editItemId">
+                    <div class="mb-3">
+                        <label for="editItemName" class="form-label">Item Name</label>
+                        <input type="text" class="form-control" id="editItemName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editItemCategory" class="form-label">Category</label>
+                        <input type="text" class="form-control" id="editItemCategory" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editItemPrice" class="form-label">Price (K)</label>
+                        <input type="number" step="0.01" class="form-control" id="editItemPrice" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editItemQuantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="editItemQuantity" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editItemThreshold" class="form-label">Low Stock Threshold</label>
+                        <input type="number" class="form-control" id="editItemThreshold" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="updateItem">Update Item</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initial chart load
+    $(document).ready(function() {
+        loadChart('sales_trend');
+    });
+</script>
+{% endblock %}
