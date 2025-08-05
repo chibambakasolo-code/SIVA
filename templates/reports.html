@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">{{ period|capitalize }} Sales Report</h5>
+                <div class="btn-group">
+                    <a href="/get_reports?period=weekly" class="btn btn-sm btn-outline-primary {% if period == 'weekly' %}active{% endif %}">Weekly</a>
+                    <a href="/get_reports?period=monthly" class="btn btn-sm btn-outline-primary {% if period == 'monthly' %}active{% endif %}">Monthly</a>
+                    <a href="/get_reports?period=annual" class="btn btn-sm btn-outline-primary {% if period == 'annual' %}active{% endif %}">Annual</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Total Sales (K)</th>
+                                <th>Items Sold</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in data %}
+                            <tr>
+                                <td>
+                                    {% if period == 'weekly' %}
+                                        {{ row.week_start }} to {{ row.week_end }}
+                                    {% elif period == 'monthly' %}
+                                        {{ row.month }}
+                                    {% else %}
+                                        {{ row.year }}
+                                    {% endif %}
+                                </td>
+                                <td>K{{ "%.2f"|format(row.total_sales|float) }}</td>
+                                <td>{{ row.items_sold }}</td>
+                                <td>
+                                    <a href="/export_report?period={{ period }}&format=csv&specific_period={% if period == 'weekly' %}{{ row.week_start }}{% elif period == 'monthly' %}{{ row.month }}{% else %}{{ row.year }}{% endif %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-download"></i> Export
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="card-title mb-0">Sales Trend</h5>
+            </div>
+            <div class="card-body">
+                <div id="reportChart" style="height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Load report chart
+    $(document).ready(function() {
+        fetch('/get_charts?type=sales_trend')
+            .then(response => response.json())
+            .then(data => {
+                Plotly.newPlot('reportChart', data.data, data.layout);
+            });
+    });
+</script>
+{% endblock %}
