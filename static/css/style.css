@@ -1,0 +1,91 @@
+body {
+    background-color: #f8f9fa;
+    padding-bottom: 60px;
+}
+
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+#searchResults {
+    position: absolute;
+    z-index: 1000;
+    width: calc(100% - 30px);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 20px;
+    }
+    
+    .display-6 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Chart container styling */
+.plot-container {
+    width: 100%;
+    height: 100%;
+}
+
+/* Button styling */
+.btn-outline-primary {
+    border-width: 2px;
+}
+
+/* Badge styling */
+.badge {
+    font-weight: 500;
+    padding: 5px 10px;
+}
+
+/* Form control styling */
+.form-control {
+    border-radius: 5px;
+    border-width: 2px;
+}
+
+/* Alert styling */
+.alert {
+    border-radius: 5px;
+}
+
+/* Navbar styling */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Footer styling */
+footer {
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+  }
