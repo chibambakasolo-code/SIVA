@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: siva
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    env: python
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.2
